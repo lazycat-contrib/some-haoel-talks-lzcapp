@@ -1,0 +1,14 @@
+package: community.lazycat.app.some-haoel-talks
+version: 1.0.0
+name: 极客时间：左耳听风
+description: "极客时间：左耳听风"
+min_os_version: "1.5.0"
+homepage: https://github.com/read-x/some-haoel-talks
+author: read-x
+locales:
+  zh:
+    name: 极客时间：左耳听风
+    description: "极客时间：左耳听风"
+  en:
+    name: 极客时间：左耳听风
+    description: "极客时间：左耳听风"

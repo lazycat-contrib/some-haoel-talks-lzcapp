@@ -1,0 +1,63 @@
+name: Sync upstream and publish LazyCat application
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - .github/lazycat-action.yml
+      - .github/workflows/lazycat.yml
+      - lzc-build.yml
+      - lzc-manifest.yml
+      - package.yml
+      - build.sh
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-upstream:
+    if: github.event_name != 'push' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sync upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LATEST="$(gh api repos/read-x/some-haoel-talks/commits/main --jq '.sha')"
+          OLD="$(cat .upstream-sha)"
+          echo "upstream=$LATEST old=$OLD"
+          if [ -z "$LATEST" ] || [ "$LATEST" = "$OLD" ]; then
+            echo "no update needed"
+            exit 0
+          fi
+          VERSION="$(sed -n 's/^version: *//p' package.yml)"
+          NEW_VERSION="$(echo "$VERSION" | awk -F. '{print $1"."$2"."($3+1)}')"
+          sed -i "s/^version: .*/version: $NEW_VERSION/" package.yml
+          echo "$LATEST" > .upstream-sha
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.yml .upstream-sha
+          git commit -m "chore: bump to upstream $LATEST ($NEW_VERSION)"
+          git push
+
+  lazycat:
+    if: github.event_name != 'schedule'
+    uses: ca-x/lazycat-github-action/.github/workflows/lazycat.yml@v1
+    with:
+      operation: auto
+      config: .github/lazycat-action.yml
+      dry-run: ${{ github.event_name == 'pull_request' }}
+      versioned-release-asset: true
+    secrets:
+      APPSTORE_URL: ${{ secrets.APPSTORE_URL }}
+      APPSTORE_TOKEN: ${{ secrets.APPSTORE_TOKEN }}
+      APP_ID: ${{ secrets.APP_ID }}
+      PRIVATE_STORE_GROUP_CODES: ${{ secrets.PRIVATE_STORE_GROUP_CODES }}

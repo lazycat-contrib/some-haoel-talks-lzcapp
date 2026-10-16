@@ -1,0 +1,29 @@
+version: 1
+
+project:
+  root: .
+  build_config: lzc-build.yml
+  package_file: package.yml
+  output: dist/some-haoel-talks.lpk
+  target_arch: amd64
+
+update:
+  strategy: publish
+  allow_downgrade: false
+  version_source:
+    type: git
+    image: ""
+
+build:
+  run_buildscript: true
+
+images: []
+
+stores:
+  official:
+    enabled: false
+  private:
+    enabled: true
+    skip_if_version_exists: true
+    name: 极客时间：左耳听风
+    summary: 极客时间：左耳听风
